@@ -1,3 +1,5 @@
+
+Google Colab sheet: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1in1Pmj7TL4kGBXlO9iSKe8x6B5D_4mwl?usp=sharing)
 # HM_challenge
 
 ```
@@ -17,7 +19,7 @@
     └── utils_loader.py
 ```
 
-Download data from [[here]](https://www.dropbox.com/s/9h3qdmj80gc6pbl/img_reduced.zip?dl=1) and place the unzipped folder in `HMDataet/data/`
+ [[Download data]](https://www.dropbox.com/s/dy0ugzx7m7dl5c2/img_reduced.zip?dl=1) and place the unzipped folder in `HMDataet/data/`
 
 ```
 python main.py --model Model_Resnet --lr_base 0.001 --batch_size 32

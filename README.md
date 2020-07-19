@@ -38,5 +38,6 @@ We will replacate the from_coco.yaml setting, that includes the defaults.yaml se
 
 2) créer une classe pour le modèle visual bert (instancié [[ici]](https://github.com/facebookresearch/mmf/blob/master/mmf/models/visual_bert.py#L384). Dans notre cas, c'est probablement VisualBERTForPretraining. L'idée, c'est probablement de lancer une fois leur projet, sortir les variable de config pour voir qu'est ce qui va où, copier le code chez nous et le modifier pour le faire marcher dans notre framework, c'est du boulot :) mais c'est ca aussi le challenge. 
 
-3) repliquer la baseline avec les bonnes configs. 
+3) Downloader le modele pretrained, je le vois [[ici]](https://github.com/facebookresearch/mmf/blob/master/mmf/configs/zoo/models.yaml), mais je sais pas comment le downloader. A nouveau, lancer leur framework pour le dl, et le copier chez nous.
+
 

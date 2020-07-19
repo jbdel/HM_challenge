@@ -4,16 +4,19 @@ Google Colab sheet: [![Open In Colab](https://colab.research.google.com/assets/c
 
 ```
 .
+├── dataloaders
+│   ├── HMResnet.py
+│   ├── __init__.py
 ├── HMDataset
-│   ├── data
-│   │   ├── dev.jsonl
-│   │   ├── test.jsonl
-│   │   ├── train.jsonl
-├── HMDataset.py
+│   └── data
+│       ├── dev.jsonl
+│       ├── test.jsonl
+│       └── train.jsonl
 ├── main.py
 ├── models
 │   ├── __init__.py
 │   └── resnet.py
+├── README.md
 ├── train.py
 └── utils
     └── utils_loader.py
@@ -25,7 +28,8 @@ Google Colab sheet: [![Open In Colab](https://colab.research.google.com/assets/c
 python main.py --model Model_Resnet --lr_base 0.001 --batch_size 32
 ```
 
-To create a new model, create new class in models folder, init must take one argument (args) and forward takes two arguments (img and text). Declare created class in `__init__.py` file and call it through `--model`argument of `main.py`
+To create a new model, create new class in models folder, init must take one argument (args) and forward takes two arguments (img and text). Declare created class in `__init__.py` file and call it through `--model`argument of `main.py`<br/>
+To create new dataloaader, create new class in dataloader folder. Declare created class in `__init__.py` file and call it through `--model`argument of `main.py`<br/>
 
 # TODO
 

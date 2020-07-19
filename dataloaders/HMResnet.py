@@ -6,7 +6,7 @@ import torch
 from utils.utils_loader import data_transform_rn152, img_name_to_PIL_img
 
 
-class HMDataset(Dataset):
+class HMResnet(Dataset):
     """ Hateful Memes Dataset."""
 
     def __init__(self, name, args, data_path="HMDataset/data"):

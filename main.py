@@ -1,15 +1,16 @@
 import argparse, os, random
 import torch
 from torch.utils.data import DataLoader
-from models import Model_Resnet
+from models import *
+from dataloaders import *
 from train import train
 import numpy as np
-from HMDataset import HMDataset
 
 def parse_args():
     parser = argparse.ArgumentParser()
     # Model
     parser.add_argument('--model', type=str, default="Model_Resnet")
+    parser.add_argument('--dataloader', type=str, default="HMResnet")
 
     # Training
     parser.add_argument('--output', type=str, default='ckpt/')
@@ -37,8 +38,8 @@ if __name__ == '__main__':
     torch.backends.cudnn.benchmark = False
 
     # DataLoader
-    train_dset = HMDataset(name="train", args=args)
-    dev_dset = HMDataset(name="dev", args=args)
+    train_dset = eval(args.dataloader)(name="train", args=args)
+    dev_dset = eval(args.dataloader)(name="dev", args=args)
     train_loader = DataLoader(train_dset, args.batch_size, shuffle=True, num_workers=2)
     eval_loader = DataLoader(dev_dset, args.batch_size, num_workers=2)
 

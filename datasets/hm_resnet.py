@@ -34,7 +34,7 @@ class HMResnet(Dataset):
         if self.name == "test":
             sample['label'] = np.array([])
         else:
-            sample['label'] = torch.FloatTensor([self.df.iloc[idx, 2]])
+            sample['label'] = torch.tensor([self.df.iloc[idx, 2]])
 
         return sample
 

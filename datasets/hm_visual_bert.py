@@ -14,7 +14,7 @@ class HMVisualBERTDataset(Dataset):
             - "id": id number of the data sample - format: numpy.int64 
             - "img_name": path for image (unused) - format: str
             - "features": img features - format: numpy.array of shape (100, 2048) and type np.float32
-            - "text": text - fromat: str
+            - "text": text - format: str
 
         Check img_features_extractor.ipynb to see how the image features are extracted
     """
@@ -35,6 +35,7 @@ class HMVisualBERTDataset(Dataset):
     def __getitem__(self, idx):
         sample = {}
 
+        # torch.tensor automatically creates a copie of the data
         sample['features'] = torch.tensor(self.df['features'][idx], dtype=torch.float)
 
         # TODO: add text processing with BERT
@@ -42,7 +43,7 @@ class HMVisualBERTDataset(Dataset):
 
 
         if self.name == 'test':
-            sample['label'] = np.array([])
+            sample['label'] = torch.tensor(np.array([]), dtype=torch.float)
         else:
             sample['label'] = torch.tensor(self.df['label'][idx], dtype=torch.float)
 
@@ -50,4 +51,4 @@ class HMVisualBERTDataset(Dataset):
 
     def getIdNumber(self, idx):
         """ Returns the id number of the image corresponding to index """
-        return self.df['id'][idx]
+        return torch.tensor(self.df['id'][idx], dtype=torch.int)

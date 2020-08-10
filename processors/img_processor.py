@@ -9,7 +9,7 @@ def img_features_loader(db_dir, img_id):
             - img_id: image id
         
         Returns:
-            - img_feat: corresponding features - format: np.array of shape (N=100, 2048) and type np.float32
+            - img_feat: corresponding image features - format: np.array of shape (N=100, 2048) and type np.float32
     """
 
     # open lmdb environment

@@ -42,7 +42,6 @@ class HMVisualBertDataset(Dataset):
         sample = {}
 
         # torch.tensor automatically creates a copie of the data
-        # Question: only take one bounding box per sample?
         sample['img_features'] = torch.tensor(self.df['img_features'][idx], dtype=torch.float)
 
         sample['text_encoding'] = {}

@@ -2,15 +2,15 @@ import argparse, os, random
 import torch
 from torch.utils.data import DataLoader
 from models import *
-from dataloaders import *
+from datasets import *
 from train import train
 import numpy as np
 
 def parse_args():
     parser = argparse.ArgumentParser()
     # Model
-    parser.add_argument('--model', type=str, default="Model_Resnet")
-    parser.add_argument('--dataloader', type=str, default="HMResnet")
+    parser.add_argument('--model', type=str, default="ModelResnet")
+    parser.add_argument('--dataset', type=str, default="HMVisualBertDataset")
 
     # Training
     parser.add_argument('--output', type=str, default='ckpt/')
@@ -38,19 +38,19 @@ if __name__ == '__main__':
     torch.backends.cudnn.benchmark = False
 
     # DataLoader
-    train_dset = eval(args.dataloader)(name="train", args=args)
-    dev_dset = eval(args.dataloader)(name="dev", args=args)
-    train_loader = DataLoader(train_dset, args.batch_size, shuffle=True, num_workers=2)
-    eval_loader = DataLoader(dev_dset, args.batch_size, num_workers=2)
+    train_ds = eval(args.dataset)(name="train", args=args)
+    dev_ds = eval(args.dataset)(name="dev", args=args)
+    train_loader = DataLoader(train_ds, args.batch_size, shuffle=True, num_workers=2)
+    eval_loader = DataLoader(dev_ds, args.batch_size, num_workers=2)
 
-    # Net
-    net = eval(args.model)(args).cuda()
-    print("Total number of parameters : " + str(sum([p.numel() for p in net.parameters()]) / 1e6) + "M")
-    net = net.cuda()
+    # # Net
+    # net = eval(args.model)(args).cuda()
+    # print("Total number of parameters : " + str(sum([p.numel() for p in net.parameters()]) / 1e6) + "M")
+    # net = net.cuda()
 
-    # Create Checkpoint dir
-    if not os.path.exists(os.path.join(args.output, args.name)):
-        os.makedirs(os.path.join(args.output, args.name))
+    # # Create Checkpoint dir
+    # if not os.path.exists(os.path.join(args.output, args.name)):
+    #     os.makedirs(os.path.join(args.output, args.name))
 
-    # Run training
-    eval_accuracies = train(net, train_loader, eval_loader, args)
+    # # Run training
+    # eval_accuracies = train(net, train_loader, eval_loader, args)

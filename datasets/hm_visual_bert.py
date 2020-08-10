@@ -7,16 +7,22 @@ import torch
 from torch.utils.data import Dataset
 
 
-class HMVisualBERTDataset(Dataset):
+class HMVisualBertDataset(Dataset):
     """ Hateful Memes Dataset for Visual BERT.
 
         Data structure: pandas Dataframe with columns:
             - "id": id number of the data sample - format: numpy.int64 
-            - "img_name": path for image (unused) - format: str
-            - "features": img features - format: numpy.array of shape (100, 2048) and type np.float32
+            - "img_name": image path (unused) - format: str
+            - "label": sample label (if train or dev) - format: 
             - "text": text - format: str
+            - "img_features": image features - format: numpy.array of shape (100, 2048) and type np.float32
+            - "text_encoding": text encoding - format: dic with keys/values:
+                                                    "input_tokens": list[str]
+                                                    "input_ids": np.array of shape (max_seq_length,)
+                                                    "segment_ids": np.array of shape (max_seq_length,)
+                                                    "input_mask: np.array of shape (max_seq_length,)
 
-        Check img_features_extractor.ipynb to see how the image features are extracted
+        Check input_preprocessing.ipynb to see how the image features and text encodings are obtained
     """
 
     def __init__(self, name, args, data_path='data'):
@@ -36,11 +42,14 @@ class HMVisualBERTDataset(Dataset):
         sample = {}
 
         # torch.tensor automatically creates a copie of the data
-        sample['features'] = torch.tensor(self.df['features'][idx], dtype=torch.float)
+        # Question: only take one bounding box per sample?
+        sample['img_features'] = torch.tensor(self.df['img_features'][idx], dtype=torch.float)
 
-        # TODO: add text processing with BERT
-        sample['text'] = self.df['text'][idx]
-
+        sample['text_encoding'] = {}
+        sample['text_encoding']['input_tokens'] = self.df['text_encoding'][idx]['input_token']
+        sample['text_encoding']['input_ids'] = torch.tensor(self.df['text_encoding'][idx]['input_ids'], dtype=torch.int64)
+        sample['text_encoding']['segment_ids'] = torch.tensor(self.df['text_encoding'][idx]['segment_ids'], dtype=torch.int8)
+        sample['text_encoding']['input_mask'] = torch.tensor(self.df['text_encoding'][idx]['input_mask'], dtype=torch.int8)
 
         if self.name == 'test':
             sample['label'] = torch.tensor(np.array([]), dtype=torch.float)

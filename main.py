@@ -11,6 +11,7 @@ def parse_args():
     # Model
     parser.add_argument('--model', type=str, default="ModelResnet")
     parser.add_argument('--dataset', type=str, default="HMVisualBertDataset")
+    parser.add_argument('--datapath', type=str, default="data/VisualBert")
 
     # Training
     parser.add_argument('--output', type=str, default='ckpt/')

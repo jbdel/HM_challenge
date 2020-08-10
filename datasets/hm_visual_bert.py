@@ -25,14 +25,14 @@ class HMVisualBertDataset(Dataset):
         Check input_preprocessing.ipynb to see how the image features and text encodings are obtained
     """
 
-    def __init__(self, name, args, data_path='data'):
+    def __init__(self, name, args):
 
         assert name in ['train', 'dev', 'test']
 
         self.args = args
         self.name = name
 
-        self.file_path = os.path.join(data_path, name + '_data')
+        self.file_path = os.path.join(self.args.datapath, name + '_data')
         self.df = pd.read_pickle(self.file_path)
 
     def __len__(self):

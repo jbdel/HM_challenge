@@ -32,10 +32,10 @@ class VisualBertModel(BertPreTrainedModel):
         # self.fixed_head_masks = [None for _ in range(len(self.encoder.layer))]
 
         # Special initialize for embeddings
-        self.embeddings.special_initialize()
+        # self.embeddings.special_initialize()
 
         # Initialize the weights
-        #self.init_weights()
+        # self.init_weights()
     
     def forward(
         self,
@@ -85,23 +85,23 @@ class VisualBertModel(BertPreTrainedModel):
 class FineTuneVisualBertModel(nn.Module):
     """ Explanation."""
 
-    def __init__(self, bert_model_name, pretrained_params_dir, visual_embedding_dim, num_labels):
+    def __init__(self, bert_model_name, pretrained_params_file, visual_embedding_dim, num_labels):
         super(FineTuneVisualBertModel, self).__init__()
         self.bert_model_name = bert_model_name
-        self.pretrained_params_dir = pretrained_params_dir
+        self.pretrained_params_file = pretrained_params_file
         self.visual_embedding_dim = visual_embedding_dim
         self.num_labels = num_labels
-        
+
+        self.state_dict = torch.load(pretrained_params_file, map_location=torch.device('cpu'))
 
         # Initialize VisualBertModel from pretrained
-        self.bert = VisualBertModel.from_pretrained(
-                        pretrained_model_name_or_path=self.bert_model_name,
-                        cache_dir=self.pretrained_params_dir,
-                        visual_embedding_dim=self.visual_embedding_dim
-                    )
-        self.bert_config=self.bert.config
+        self.bert_config = BertConfig.from_pretrained(self.bert_model_name, num_labels=self.num_labels)
 
-        print(self.bert_config)
+        self.bert = VisualBertModel.from_pretrained(
+                        pretrained_model_name_or_path=None,
+                        config=self.bert_config,
+                        state_dict=self.state_dict
+                    )
         
         # Add layers for binary classification task
         self.dropout = nn.Dropout(self.bert_config.hidden_dropout_prob)
@@ -111,8 +111,18 @@ class FineTuneVisualBertModel(nn.Module):
         )
 
         # VisualBertModel initialized with pretrained weights
-        # Initialize classifier
-        self.classifier.apply(self.bert._init_weights)
+
+        # Initialize classifier randomly
+        # self.classifier.apply(self.bert._init_weights)
+
+        # Initialize classifier with pretrained weights too
+
+        self.classifier[0].dense.weight = nn.Parameter(self.state_dict['classifier.0.dense.weight'], requires_grad=True)
+        self.classifier[0].dense.bias = nn.Parameter(self.state_dict['classifier.0.dense.bias'], requires_grad=True)
+        self.classifier[0].LayerNorm.weight = nn.Parameter(self.state_dict['classifier.0.LayerNorm.weight'], requires_grad=True)
+        self.classifier[0].LayerNorm.bias = nn.Parameter(self.state_dict['classifier.0.LayerNorm.bias'], requires_grad=True)
+        self.classifier[1].weight = nn.Parameter(self.state_dict['classifier.1.weight'], requires_grad=True)
+        self.classifier[1].bias = nn.Parameter(self.state_dict['classifier.1.bias'], requires_grad=True)
 
         def forward(
             self,
@@ -148,13 +158,13 @@ class PrepareVisualBertModel(nn.Module):
         super(PrepareVisualBertModel, self).__init__()
 
         bert_model_name = 'bert-base-uncased'
-        pretrained_params_dir = '/Users/guillaumevalette/Desktop/features/visual_bert.finetuned.hateful_memes_from_coco_test/'
+        pretrained_params_file = '/Users/guillaumevalette/Desktop/features/visual_bert.finetuned.hateful_memes_from_coco_test/model.pth'
         visual_embedding_dim = 2048
         num_labels = 2
     
         self.model = FineTuneVisualBertModel(
             bert_model_name=bert_model_name,
-            pretrained_params_dir=pretrained_params_dir,
+            pretrained_params_file=pretrained_params_file,
             visual_embedding_dim=visual_embedding_dim,
             num_labels=num_labels
         )

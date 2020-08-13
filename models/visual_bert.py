@@ -156,35 +156,39 @@ class FineTuneVisualBertModel(nn.Module):
 class PrepareVisualBertModel(nn.Module):
     """ Explanation."""
 
-    def __init__(self):
+    def __init__(self, args):
         super(PrepareVisualBertModel, self).__init__()
 
-        bert_model_name = 'bert-base-uncased'
+        self.bert_model_name = 'bert-base-uncased'
 
-        fc7_w_file = '/Users/guillaumevalette/Desktop/pretrained_params/fasterrcnn_fc7/fc7_w.pkl'
-        fc7_b_file = '/Users/guillaumevalette/Desktop/pretrained_params/fasterrcnn_fc7/fc7_b.pkl'
-        pretrained_params_file = '/Users/guillaumevalette/Desktop/pretrained_params/visual_bert_finetuned/model.pth'
-        visual_embedding_dim = 2048
-        num_labels = 2
+        self.fc7_w_file = os.path.join(self.args.params_path, 'fasterrcnn_fc7/fc7_w.pkl')
+        self.fc7_b_file = os.path.join(self.args.params_path, 'fasterrcnn_fc7/fc7_b.pkl')
+        self.pretrained_params_file = os.path.join(self.args.params_path, 'visual_bert_finetuned/model.pth')
 
-        self.faster_rcnn_fc7 = FineTuneFasterRcnnFc7(weights_file=fc7_w_file, bias_file=fc7_b_file)
+        # self.fc7_w_file = '/Users/guillaumevalette/Desktop/pretrained_params/fasterrcnn_fc7/fc7_w.pkl'
+        # self.fc7_b_file = '/Users/guillaumevalette/Desktop/pretrained_params/fasterrcnn_fc7/fc7_b.pkl'
+        # self.pretrained_params_file = '/Users/guillaumevalette/Desktop/pretrained_params/visual_bert_finetuned/model.pth'
+        self.visual_embedding_dim = 2048
+        self.num_labels = 2
+
+        self.faster_rcnn_fc7 = FineTuneFasterRcnnFc7(weights_file=self.fc7_w_file, bias_file=self.fc7_b_file)
     
         self.model = FineTuneVisualBertModel(
-            bert_model_name=bert_model_name,
-            pretrained_params_file=pretrained_params_file,
-            visual_embedding_dim=visual_embedding_dim,
-            num_labels=num_labels
+            bert_model_name=self.bert_model_name,
+            pretrained_params_file=self.pretrained_params_file,
+            visual_embedding_dim=self.visual_embedding_dim,
+            num_labels=self.num_labels
         )
 
-    def forward(self, sample):
+    def forward(self, samples_batch):
 
-        sample.img_features = self.faster_rcnn_fc7(sample.img_features)
+        samples_batch["img_features"] = self.faster_rcnn_fc7(samples_batch["img_features"])
 
         output_dic = self.model(
-            input_ids=sample.input_ids,
-            segment_ids=sample.segment_ids,
-            img_features=sample.img_features,
-            input_mask=sample.input_mask
+            input_ids=samples_batch["input_ids"],
+            segment_ids=samples_batch["segment_ids"],
+            img_features=samples_batch["img_features"],
+            input_mask=samples_batch["input_mask"]
         )
 
         return output_dic

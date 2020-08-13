@@ -12,7 +12,8 @@ def parse_args():
     # Model
     parser.add_argument('--model', type=str, default="ModelResnet")
     parser.add_argument('--dataset', type=str, default="HMVisualBertDataset")
-    parser.add_argument('--datapath', type=str, default="data/VisualBert")
+    parser.add_argument('--data_path', type=str, default="data/VisualBert")
+    parser.add_argument('--params_path', type=str, default="pretrained_params")
 
     # Training
     parser.add_argument('--output', type=str, default='ckpt/')
@@ -46,7 +47,7 @@ if __name__ == '__main__':
     eval_loader = DataLoader(dev_ds, args.batch_size, num_workers=2)
 
     # Test
-    preds = evaluate_visual_bert(eval_loader=eval_loader)
+    preds = evaluate_visual_bert(eval_loader=eval_loader, args=args)
     print(preds)
 
     # # Net

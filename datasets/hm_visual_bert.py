@@ -32,7 +32,7 @@ class HMVisualBertDataset(Dataset):
         self.args = args
         self.name = name
 
-        self.file_path = os.path.join(self.args.datapath, name + '_data')
+        self.file_path = os.path.join(self.args.data_path, name + '_data')
         self.df = pd.read_pickle(self.file_path)
 
     def __len__(self):

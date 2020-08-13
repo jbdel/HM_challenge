@@ -161,9 +161,9 @@ class PrepareVisualBertModel(nn.Module):
 
         self.bert_model_name = 'bert-base-uncased'
 
-        self.fc7_w_file = os.path.join(self.args.params_path, 'fasterrcnn_fc7/fc7_w.pkl')
-        self.fc7_b_file = os.path.join(self.args.params_path, 'fasterrcnn_fc7/fc7_b.pkl')
-        self.pretrained_params_file = os.path.join(self.args.params_path, 'visual_bert_finetuned/model.pth')
+        self.fc7_w_file = os.path.join(args.params_path, 'fasterrcnn_fc7/fc7_w.pkl')
+        self.fc7_b_file = os.path.join(args.params_path, 'fasterrcnn_fc7/fc7_b.pkl')
+        self.pretrained_params_file = os.path.join(args.params_path, 'visual_bert_finetuned/model.pth')
 
         # self.fc7_w_file = '/Users/guillaumevalette/Desktop/pretrained_params/fasterrcnn_fc7/fc7_w.pkl'
         # self.fc7_b_file = '/Users/guillaumevalette/Desktop/pretrained_params/fasterrcnn_fc7/fc7_b.pkl'

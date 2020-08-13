@@ -5,6 +5,7 @@ from models import *
 from datasets import *
 from train import train
 import numpy as np
+from eval import evaluate_visual_bert
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -43,6 +44,10 @@ if __name__ == '__main__':
     dev_ds = eval(args.dataset)(name="dev", args=args)
     train_loader = DataLoader(train_ds, args.batch_size, shuffle=True, num_workers=2)
     eval_loader = DataLoader(dev_ds, args.batch_size, num_workers=2)
+
+    # Test
+    preds = evaluate_visual_bert(eval_loader=eval_loader)
+    print(preds)
 
     # # Net
     # net = eval(args.model)(args).cuda()

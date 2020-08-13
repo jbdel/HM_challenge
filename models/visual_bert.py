@@ -13,6 +13,8 @@ from transformers.modeling_bert import (
 )
 from modules.embeddings import VisualBertEmbeddings
 
+from modules.encoders import FineTuneFasterRcnnFc7
+
 class VisualBertModel(BertPreTrainedModel):
     """ Explanation."""
 
@@ -158,9 +160,14 @@ class PrepareVisualBertModel(nn.Module):
         super(PrepareVisualBertModel, self).__init__()
 
         bert_model_name = 'bert-base-uncased'
-        pretrained_params_file = '/Users/guillaumevalette/Desktop/features/visual_bert.finetuned.hateful_memes_from_coco_test/model.pth'
+
+        fc7_w_file = '/Users/guillaumevalette/Desktop/pretrained_params/fasterrcnn_fc7/fc7_w.pkl'
+        fc7_b_file = '/Users/guillaumevalette/Desktop/pretrained_params/fasterrcnn_fc7/fc7_b.pkl'
+        pretrained_params_file = '/Users/guillaumevalette/Desktop/pretrained_params/visual_bert_finetuned/model.pth'
         visual_embedding_dim = 2048
         num_labels = 2
+
+        self.faster_rcnn_fc7 = FineTuneFasterRcnnFc7(weights_file=fc7_w_file, bias_file=fc7_b_file)
     
         self.model = FineTuneVisualBertModel(
             bert_model_name=bert_model_name,
@@ -170,6 +177,8 @@ class PrepareVisualBertModel(nn.Module):
         )
 
     def forward(self, sample):
+
+        sample.img_features = self.faster_rcnn_fc7(sample.img_features)
 
         output_dic = self.model(
             input_ids=sample.input_ids,

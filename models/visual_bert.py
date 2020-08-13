@@ -31,7 +31,7 @@ class VisualBertModel(BertPreTrainedModel):
         self.pooler = BertPooler(self.config)
 
         # Mask to nullify selected heads of the self-attention modules
-        # self.fixed_head_masks = [None for _ in range(len(self.encoder.layer))]
+        self.fixed_head_masks = [None for _ in range(len(self.encoder.layer))]
 
         # Special initialize for embeddings
         # self.embeddings.special_initialize()
@@ -75,7 +75,8 @@ class VisualBertModel(BertPreTrainedModel):
         
         # Only keep las layer hidden states (no output attentions)
         encoded_layers = self.encoder(hidden_states=embedding_output,
-                                      attention_mask=extended_attention_mask)
+                                      attention_mask=extended_attention_mask,
+                                      head_mask=self.fixed_head_masks)
         sequence_output = encoded_layers[0]
 
         # Bert Pooling: take hidden state of the first token of sequence_output

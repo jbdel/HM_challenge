@@ -22,8 +22,8 @@ class VisualBertModel(BertPreTrainedModel):
         visual_embedding_dim=2048
     ):
         super(VisualBertModel, self).__init__(config)
-        config.visual_enbedding_dim = visual_embedding_dim
-        self.config=config
+        config.visual_embedding_dim = visual_embedding_dim
+        self.config = config
         self.embeddings = VisualBertEmbeddings(self.config)
         self.encoder = BertEncoder(self.config)
         self.pooler = BertPooler(self.config)
@@ -35,7 +35,7 @@ class VisualBertModel(BertPreTrainedModel):
         self.embeddings.special_initialize()
 
         # Initialize the weights
-        self._init_weights()
+        #self.init_weights()
     
     def forward(
         self,
@@ -71,7 +71,7 @@ class VisualBertModel(BertPreTrainedModel):
             img_features=img_features
         )
         
-        # Last layer hidden states (no output attentions)
+        # Only keep las layer hidden states (no output attentions)
         encoded_layers = self.encoder(hidden_states=embedding_output,
                                       attention_mask=extended_attention_mask)
         sequence_output = encoded_layers[0]
@@ -82,31 +82,35 @@ class VisualBertModel(BertPreTrainedModel):
         return sequence_output, pooled_output
 
 
-class VisualBertModelForClassification(nn.Module):
+class FineTuneVisualBertModel(nn.Module):
     """ Explanation."""
 
-    def __init__(
-        self, 
-        config, 
-    ):
-        super(VisualBertModelForClassification, self).__init__()
-        self.config=config
+    def __init__(self, bert_model_name, pretrained_params_dir, visual_embedding_dim, num_labels):
+        super(FineTuneVisualBertModel, self).__init__()
+        self.bert_model_name = bert_model_name
+        self.pretrained_params_dir = pretrained_params_dir
+        self.visual_embedding_dim = visual_embedding_dim
+        self.num_labels = num_labels
+        
 
         # Initialize VisualBertModel from pretrained
-        self.bert_config = BertConfig.from_pretrained()
-        self.bert = VisualBertModel.from_pretrained()
-        
-        # Binary classification
-        self.num_labels = 2
+        self.bert = VisualBertModel.from_pretrained(
+                        pretrained_model_name_or_path=self.bert_model_name,
+                        cache_dir=self.pretrained_params_dir,
+                        visual_embedding_dim=self.visual_embedding_dim
+                    )
+        self.bert_config=self.bert.config
 
+        print(self.bert_config)
+        
         # Add layers for binary classification task
-        self.dropout = nn.Dropout(self.bert.config.hidden_dropout_prob)
+        self.dropout = nn.Dropout(self.bert_config.hidden_dropout_prob)
         self.classifier = nn.Sequential(
-            BertPredictionHeadTransform(self.bert.config),
+            BertPredictionHeadTransform(self.bert_config),
             nn.Linear(self.bert.config.hidden_size, self.num_labels)
         )
 
-        # VisualBertModel initialized to pretrained weights
+        # VisualBertModel initialized with pretrained weights
         # Initialize classifier
         self.classifier.apply(self.bert._init_weights)
 
@@ -137,5 +141,35 @@ class VisualBertModelForClassification(nn.Module):
 
             return output_dic
 
+class PrepareVisualBertModel(nn.Module):
+    """ Explanation."""
+
+    def __init__(self):
+        super(PrepareVisualBertModel, self).__init__()
+
+        bert_model_name = 'bert-base-uncased'
+        pretrained_params_dir = '/Users/guillaumevalette/Desktop/features/visual_bert.finetuned.hateful_memes_from_coco_test/'
+        visual_embedding_dim = 2048
+        num_labels = 2
+    
+        self.model = FineTuneVisualBertModel(
+            bert_model_name=bert_model_name,
+            pretrained_params_dir=pretrained_params_dir,
+            visual_embedding_dim=visual_embedding_dim,
+            num_labels=num_labels
+        )
+
+    def forward(self, sample):
+
+        output_dic = self.model(
+            input_ids=sample.input_ids,
+            segment_ids=sample.segment_ids,
+            img_features=sample.img_features,
+            input_mask=sample.input_mask
+        )
+
+        return output_dic
+
+        
 
 

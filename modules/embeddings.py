@@ -26,19 +26,23 @@ class VisualBertEmbeddings(BertEmbeddings):
     
     def __init__(self, config):
         # Initiliaze BertEmbeddings class for textual embeddings
+        # Contains following layers: word_embeddings, token_type_embeddings, position_embeddings
+        # LayerNorm and dropout
         super(VisualBertEmbeddings, self).__init__(config)
 
         # Initialize layers for visual embeddings
-        self.visual_input_embeddings = nn.Linear(
+        # Visual input embeddings
+        self.projection = nn.Linear(
                             in_features=config.visual_embedding_dim, 
                             out_features=config.hidden_size
                         )
-        self.visual_segment_embeddings = nn.Embedding(
+        # Visual segment (= token_type) embeddings
+        self.token_type_embeddings_visual = nn.Embedding(
                             num_embeddings=config.type_vocab_size, 
                             embedding_dim=config.hidden_size
                         )
-
-        self.visual_position_embeddings = nn.Embedding(
+        # Visual position embeddings
+        self.position_embeddings_visual = nn.Embedding(
                             num_embeddings=config.max_position_embeddings, 
                             embedding_dim=config.hidden_size
                         )
@@ -46,8 +50,8 @@ class VisualBertEmbeddings(BertEmbeddings):
     def special_initialize(self):
         """ Initialize visual_segment_embeddings and visual_position_embeddings layers from
             BertEmbeddings params for segment_embeddings and position_embeddings layers. """
-        self.visual_segment_embeddings.weight = nn.Parameter(deepcopy(self.token_type_embeddings.weight.data), requires_grad=True)
-        self.visual_position_embeddings.weight = nn.Parameter(deepcopy(self.position_embeddings.weight.data), requires_grad=True)
+        self.token_type_embeddings_visual.weight = nn.Parameter(deepcopy(self.token_type_embeddings.weight.data), requires_grad=True)
+        self.position_embeddings_visual.weight = nn.Parameter(deepcopy(self.position_embeddings.weight.data), requires_grad=True)
 
     def forward(self, input_ids, segment_ids, img_features):
         # First create embeddings for textual inputs
@@ -67,9 +71,9 @@ class VisualBertEmbeddings(BertEmbeddings):
         img_segments = torch.zeros(visual_input_shape, dtype=torch.long, device=device)
         img_positions = torch.zeros(visual_input_shape, dtype=torch.long, device=device)
 
-        visual_input_embeddings = self.visual_input_embeddings(img_features)
-        visual_segment_embeddings = self.visual_segment_embeddings(img_segments)
-        visual_position_embeddings = self.visual_segment_embeddings(img_positions)
+        visual_input_embeddings = self.projection(img_features)
+        visual_segment_embeddings = self.token_type_embeddings_visual(img_segments)
+        visual_position_embeddings = self.position_embeddings_visual(img_positions)
 
         visual_embeddings = visual_input_embeddings + visual_segment_embeddings + visual_position_embeddings
         

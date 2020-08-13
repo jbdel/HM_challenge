@@ -47,8 +47,8 @@ if __name__ == '__main__':
     eval_loader = DataLoader(dev_ds, args.batch_size, num_workers=2)
 
     # Test
-    preds = evaluate_visual_bert(eval_loader=eval_loader, args=args)
-    print(preds)
+    outputs = evaluate_visual_bert(eval_loader=eval_loader, args=args)
+    print(outputs)
 
     # # Net
     # net = eval(args.model)(args).cuda()

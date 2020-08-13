@@ -126,32 +126,32 @@ class FineTuneVisualBertModel(nn.Module):
         self.classifier[1].weight = nn.Parameter(self.state_dict['classifier.1.weight'], requires_grad=True)
         self.classifier[1].bias = nn.Parameter(self.state_dict['classifier.1.bias'], requires_grad=True)
 
-        def forward(
-            self,
+    def forward(
+        self,
+        input_ids,
+        segment_ids,
+        img_features,
+        input_mask
+    ):
+        """ Make sure that every textual input has shape (batch_size, max_seq_length)
+            and every visual inputs has shape (batch_size, img_features_number, img_features_dim). """
+
+        sequence_output, pooled_output = self.bert(
             input_ids,
             segment_ids,
             img_features,
             input_mask
-        ):
-            """ Make sure that every textual input has shape (batch_size, max_seq_length)
-                and every visual inputs has shape (batch_size, img_features_number, img_features_dim). """
+        )
 
-            sequence_output, pooled_output = self.bert(
-                input_ids,
-                segment_ids,
-                img_features,
-                input_mask
-            )
+        output_dic = {}
 
-            output_dic = {}
+        pooled_output = self.dropout(pooled_output)
+        logits = self.classifier(pooled_output)
+        reshaped_logits = logits.contiguous().view(-1, self.num_labels)
 
-            pooled_output = self.dropout(pooled_output)
-            logits = self.classifier(pooled_output)
-            reshaped_logits = logits.contiguous().view(-1, self.num_labels)
+        output_dic["scores"] = reshaped_logits
 
-            output_dic["scores"] = reshaped_logits
-
-            return output_dic
+        return output_dic
 
 class PrepareVisualBertModel(nn.Module):
     """ Explanation."""

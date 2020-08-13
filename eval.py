@@ -10,19 +10,32 @@ def evaluate_visual_bert(eval_loader, args):
     model.train(False)
     # accuracy = []
     preds = []
+    probs = []
+    true_labels = []
     for _ , samples_batch in enumerate(eval_loader):
 
         samples_batch['input_ids'] = samples_batch['input_ids'].cuda()
         samples_batch['segment_ids'] = samples_batch['segment_ids'].cuda()
         samples_batch['input_mask'] = samples_batch['input_mask'].cuda()
         samples_batch['img_features'] = samples_batch['img_features'].cuda()
-        samples_batch['label'] = samples_batch['label'].cuda()
 
-        pred = model(samples_batch).cpu().data.numpy()
+        pred = model(samples_batch).cpu().data
+
+        softmax = nn.Softmax(dim=1)
+
+        prob = softmax(pred)
+        
+        pred = pred.numpy()
+
+        prob = prob.numpy()
 
         preds.append(pred)
 
-    return preds
+        probs.append(prob)
+
+        true_labels.append(samples_batch['label'].data.numpy())
+
+    return preds, probs, true_labels
 
         # if not eval_loader.dataset.name == "test":
         #     true_label = true_label.cpu().data.numpy()

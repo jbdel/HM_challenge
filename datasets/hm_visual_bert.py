@@ -44,11 +44,9 @@ class HMVisualBertDataset(Dataset):
         # torch.tensor automatically creates a copie of the data
         sample['img_features'] = torch.tensor(self.df['img_features'][idx], dtype=torch.float)
 
-        sample['text_encoding'] = {}
-        sample['text_encoding']['input_tokens'] = self.df['text_encoding'][idx]['input_token']
-        sample['text_encoding']['input_ids'] = torch.tensor(self.df['text_encoding'][idx]['input_ids'], dtype=torch.int64)
-        sample['text_encoding']['segment_ids'] = torch.tensor(self.df['text_encoding'][idx]['segment_ids'], dtype=torch.int8)
-        sample['text_encoding']['input_mask'] = torch.tensor(self.df['text_encoding'][idx]['input_mask'], dtype=torch.int8)
+        sample['input_ids'] = torch.tensor(self.df['text_encoding'][idx]['input_ids'].astype(np.int64), dtype=torch.int64)
+        sample['segment_ids'] = torch.tensor(self.df['text_encoding'][idx]['segment_ids'].astype(np.int8), dtype=torch.int8)
+        sample['input_mask'] = torch.tensor(self.df['text_encoding'][idx]['input_mask'].astype(np.int8), dtype=torch.int8)
 
         if self.name == 'test':
             sample['label'] = torch.tensor(np.array([]), dtype=torch.float)

@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     # Test
     outputs = evaluate_visual_bert(eval_loader=eval_loader, args=args)
-    print(outputs)
+    print(outputs[5])
 
     # # Net
     # net = eval(args.model)(args).cuda()

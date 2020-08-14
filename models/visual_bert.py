@@ -45,7 +45,13 @@ class VisualBertModel(BertPreTrainedModel):
         segment_ids,
         img_features,
         input_mask
-    ):
+    ):  
+
+        # Add image mask to input mask to get attention mask for the whole input (CHECK)
+        img_mask = torch.ones(img_features.shape[:-1]).long()
+
+        attention_mask = torch.cat((input_mask, img_mask), dim=1)
+
         # We create a 3D attention mask from a 2D tensor mask.
         # Sizes are [batch_size, 1, 1, to_seq_length]
         # So we can broadcast to [batch_size, num_heads, from_seq_length, to_seq_length]
@@ -54,7 +60,7 @@ class VisualBertModel(BertPreTrainedModel):
         # broadcast dimension here.
 
         # Note: attention_mask = input_mask
-        extended_attention_mask = input_mask.unsqueeze(1).unsqueeze(2)
+        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
 
         # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
         # masked positions, this operation will create a tensor which is 0.0 for

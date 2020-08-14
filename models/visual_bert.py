@@ -59,7 +59,6 @@ class VisualBertModel(BertPreTrainedModel):
         # causal attention used in OpenAI GPT, we just need to prepare the
         # broadcast dimension here.
 
-        # Note: attention_mask = input_mask
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
 
         # Since attention_mask is 1.0 for positions we want to attend and 0.0 for
@@ -79,7 +78,7 @@ class VisualBertModel(BertPreTrainedModel):
             img_features=img_features
         )
         
-        # Only keep las layer hidden states (no output attentions)
+        # Only keep last layer hidden states (no output attentions)
         encoded_layers = self.encoder(hidden_states=embedding_output,
                                       attention_mask=extended_attention_mask,
                                       head_mask=self.fixed_head_masks)
@@ -124,8 +123,7 @@ class FineTuneVisualBertModel(nn.Module):
         # Initialize classifier randomly
         # self.classifier.apply(self.bert._init_weights)
 
-        # Initialize classifier with pretrained weights too
-
+        # Initialize classifier with finetuned weights
         self.classifier[0].dense.weight = nn.Parameter(self.state_dict['classifier.0.dense.weight'], requires_grad=True)
         self.classifier[0].dense.bias = nn.Parameter(self.state_dict['classifier.0.dense.bias'], requires_grad=True)
         self.classifier[0].LayerNorm.weight = nn.Parameter(self.state_dict['classifier.0.LayerNorm.weight'], requires_grad=True)
@@ -140,9 +138,6 @@ class FineTuneVisualBertModel(nn.Module):
         img_features,
         input_mask
     ):
-        """ Make sure that every textual input has shape (batch_size, max_seq_length)
-            and every visual inputs has shape (batch_size, img_features_number, img_features_dim). """
-
         sequence_output, pooled_output = self.bert(
             input_ids,
             segment_ids,
@@ -168,17 +163,14 @@ class PrepareVisualBertModel(nn.Module):
 
         self.bert_model_name = 'bert-base-uncased'
 
-        self.fc7_w_file = os.path.join(args.params_path, 'fasterrcnn_fc7/fc7_w.pkl')
-        self.fc7_b_file = os.path.join(args.params_path, 'fasterrcnn_fc7/fc7_b.pkl')
+        # self.fc7_w_file = os.path.join(args.params_path, 'fasterrcnn_fc7/fc7_w.pkl')
+        # self.fc7_b_file = os.path.join(args.params_path, 'fasterrcnn_fc7/fc7_b.pkl')
         self.pretrained_params_file = os.path.join(args.params_path, 'visual_bert_finetuned/model.pth')
 
-        # self.fc7_w_file = '/Users/guillaumevalette/Desktop/pretrained_params/fasterrcnn_fc7/fc7_w.pkl'
-        # self.fc7_b_file = '/Users/guillaumevalette/Desktop/pretrained_params/fasterrcnn_fc7/fc7_b.pkl'
-        # self.pretrained_params_file = '/Users/guillaumevalette/Desktop/pretrained_params/visual_bert_finetuned/model.pth'
         self.visual_embedding_dim = 2048
         self.num_labels = 2
 
-        self.faster_rcnn_fc7 = FineTuneFasterRcnnFc7(weights_file=self.fc7_w_file, bias_file=self.fc7_b_file)
+        # self.faster_rcnn_fc7 = FineTuneFasterRcnnFc7(weights_file=self.fc7_w_file, bias_file=self.fc7_b_file)
     
         self.model = FineTuneVisualBertModel(
             bert_model_name=self.bert_model_name,
@@ -188,8 +180,10 @@ class PrepareVisualBertModel(nn.Module):
         )
 
     def forward(self, samples_batch):
+        """ Make sure that every textual input has shape (batch_size, max_seq_length)
+            and every visual inputs has shape (batch_size, img_features_number, img_features_dim). """
 
-        samples_batch["img_features"] = self.faster_rcnn_fc7(samples_batch["img_features"])
+        # samples_batch["img_features"] = self.faster_rcnn_fc7(samples_batch["img_features"])
 
         output_dic = self.model(
             input_ids=samples_batch["input_ids"],

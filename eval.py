@@ -7,6 +7,7 @@ from models.visual_bert import PrepareVisualBertModel
 
 def evaluate_visual_bert(eval_loader, args):
     model = PrepareVisualBertModel(args)
+    # model = model.cuda()
     model.train(False)
     
     preds = []
@@ -29,7 +30,7 @@ def evaluate_visual_bert(eval_loader, args):
         
         pred = pred.detach().numpy()
         prob = prob.detach().numpy()
-        pred_label = np.argmin(prob, axis=1)
+        pred_label = np.argmax(prob, axis=1)
         true_label = samples_batch['label'].detach().numpy()
         correct = np.sum(pred_label == true_label)
         samples = samples_batch['input_ids'].shape[0]

@@ -5,7 +5,6 @@ from models import *
 from datasets import *
 from train import train
 import numpy as np
-from eval import evaluate_visual_bert
 from omegaconf import OmegaConf
 
 

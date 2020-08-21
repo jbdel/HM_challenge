@@ -6,12 +6,14 @@ from datasets import *
 from train import train
 import numpy as np
 from eval import evaluate_visual_bert
+from omegaconf import OmegaConf
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
     # Model
-    parser.add_argument('--model', type=str, default="ModelResnet")
-    parser.add_argument('--dataset', type=str, default="HMVisualBertDataset")
+    parser.add_argument('--model', type=str, default="VisualBERT")
+    parser.add_argument('--dataset', type=str, default="HatefulMemesFeaturesDataset")
     parser.add_argument('--data_path', type=str, default="data/VisualBert")
     parser.add_argument('--params_path', type=str, default="pretrained_params")
 
@@ -20,7 +22,9 @@ def parse_args():
     parser.add_argument('--name', type=str, default='exp0/')
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--max_epoch', type=int, default=99)
-    parser.add_argument('--lr_base', type=float, default=0.001)
+    parser.add_argument('--lr_base', type=float, default=5e-05)
+    parser.add_argument('--eps', type=float, default=1e-08)
+
     parser.add_argument('--grad_norm_clip', type=float, default=-1)
     parser.add_argument('--eval_start', type=int, default=0)
     parser.add_argument('--early_stop', type=int, default=3)
@@ -40,24 +44,28 @@ if __name__ == '__main__':
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    # DataLoader
-    train_ds = eval(args.dataset)(name="train", args=args)
-    dev_ds = eval(args.dataset)(name="dev", args=args)
-    train_loader = DataLoader(train_ds, args.batch_size, shuffle=True, num_workers=2)
-    eval_loader = DataLoader(dev_ds, args.batch_size, num_workers=2)
+    config = OmegaConf.load('facebook.yaml')
+    train_ds = eval(args.dataset)(config.dataset_config.hateful_memes, dataset_type="train")
+    dev_ds = eval(args.dataset)(config.dataset_config.hateful_memes, dataset_type="val")
+    train_ds.init_processors()
+    dev_ds.init_processors()
+    train_loader = DataLoader(train_ds, args.batch_size, shuffle=True, num_workers=4)
+    eval_loader = DataLoader(dev_ds, args.batch_size, num_workers=4)
 
-    # Test
-    outputs = evaluate_visual_bert(eval_loader=eval_loader, args=args)
-    print(outputs[5])
+    # Net
 
-    # # Net
-    # net = eval(args.model)(args).cuda()
-    # print("Total number of parameters : " + str(sum([p.numel() for p in net.parameters()]) / 1e6) + "M")
-    # net = net.cuda()
+    net = eval(args.model)(config.model_config.visual_bert)
+    net.build()
+    net.init_losses()
+    net.model.cuda()
+    print("Total number of parameters : " + str(sum([p.numel() for p in net.parameters()]) / 1e6) + "M")
 
-    # # Create Checkpoint dir
-    # if not os.path.exists(os.path.join(args.output, args.name)):
-    #     os.makedirs(os.path.join(args.output, args.name))
+
+    # Create Checkpoint dir
+    if not os.path.exists(os.path.join(args.output, args.name)):
+        os.makedirs(os.path.join(args.output, args.name))
 
     # # Run training
-    # eval_accuracies = train(net, train_loader, eval_loader, args)
+    eval_accuracies, eval_auroc = train(net, train_loader, eval_loader, args)
+
+

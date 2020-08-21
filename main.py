@@ -44,10 +44,9 @@ if __name__ == '__main__':
     torch.backends.cudnn.benchmark = False
 
     config = OmegaConf.load('facebook.yaml')
+
     train_ds = eval(args.dataset)(config.dataset_config.hateful_memes, dataset_type="train")
     dev_ds = eval(args.dataset)(config.dataset_config.hateful_memes, dataset_type="val")
-    train_ds.init_processors()
-    dev_ds.init_processors()
     train_loader = DataLoader(train_ds, args.batch_size, shuffle=True, num_workers=4)
     eval_loader = DataLoader(dev_ds, args.batch_size, num_workers=4)
 

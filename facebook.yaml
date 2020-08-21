@@ -66,7 +66,7 @@ model_config:
     - cross_entropy
 dataset_config:
   hateful_memes:
-    data_dir: /home/jb/.cache/torch/mmf/data/datasets
+    data_dir: ./data/facebook
     depth_first: false
     fast_read: false
     use_images: false
@@ -157,10 +157,10 @@ scheduler:
     num_warmup_steps: 2000
     num_training_steps: 22000
 env:
-  cache_dir: /home/jb/.cache/torch/mmf
+  cache_dir: ./data/facebook
   dataset_zoo: configs/zoo/datasets.yaml
   model_zoo: configs/zoo/models.yaml
-  data_dir: /home/jb/.cache/torch/mmf/data
+  data_dir: ./data/facebook
   save_dir: ./save
   log_dir: ''
   report_dir: ''

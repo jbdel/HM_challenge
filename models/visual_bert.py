@@ -33,9 +33,6 @@ class VisualBertModel(BertPreTrainedModel):
         # Mask to nullify selected heads of the self-attention modules
         self.fixed_head_masks = [None for _ in range(len(self.encoder.layer))]
 
-        # Special initialize for embeddings
-        # self.embeddings.special_initialize()
-
         # Initialize the weights
         # self.init_weights()
     
@@ -93,43 +90,59 @@ class VisualBertModel(BertPreTrainedModel):
 class FineTuneVisualBertModel(nn.Module):
     """ Explanation."""
 
-    def __init__(self, bert_model_name, pretrained_params_file, visual_embedding_dim, num_labels):
+    def __init__(self, bert_model_name, pretrained_params_file, visual_embedding_dim, num_labels, num_hidden_layers):
         super(FineTuneVisualBertModel, self).__init__()
         self.bert_model_name = bert_model_name
         self.pretrained_params_file = pretrained_params_file
         self.visual_embedding_dim = visual_embedding_dim
         self.num_labels = num_labels
+        self.num_hidden_layers = num_hidden_layers
 
-        self.state_dict = torch.load(pretrained_params_file, map_location=torch.device('cpu'))
+        # VisualBertModel first
 
-        # Initialize VisualBertModel from pretrained
-        self.bert_config = BertConfig.from_pretrained(self.bert_model_name, num_labels=self.num_labels)
+        if self.pretrained_params_file is not None:
+            # Initialize VisualBertModel from pretrained_params_file (mmf source)
+            # In this case, num_hidden_layers is necessarily 12
+            self.num_hidden_layers = 12
+            self.state_dict = torch.load(self.pretrained_params_file, map_location=torch.device('cpu'))
 
-        self.bert = VisualBertModel.from_pretrained(
+            self.bert_config = BertConfig.from_pretrained(self.bert_model_name, num_labels=self.num_labels)
+            self.bert = VisualBertModel.from_pretrained(
                         pretrained_model_name_or_path=None,
                         config=self.bert_config,
                         state_dict=self.state_dict
                     )
+        else:
+            # Initialize VisualBertModel from pretrained bert_model_name
+            self.bert_config = BertConfig.from_pretrained(self.bert_model_name, 
+                                                          num_labels=self.num_labels,
+                                                          num_hidden_layers=self.num_hidden_layers)
+            self.bert = VisualBertModel.from_pretrained(
+                pretrained_model_name_or_path=self.bert_model_name,
+                config=self.bert_config
+            )
         
-        # Add layers for binary classification task
+        # Layers for binary classification task second
+
         self.dropout = nn.Dropout(self.bert_config.hidden_dropout_prob)
         self.classifier = nn.Sequential(
             BertPredictionHeadTransform(self.bert_config),
             nn.Linear(self.bert.config.hidden_size, self.num_labels)
         )
-
-        # VisualBertModel initialized with pretrained weights
-
-        # Initialize classifier randomly
-        # self.classifier.apply(self.bert._init_weights)
-
-        # Initialize classifier with finetuned weights
-        self.classifier[0].dense.weight = nn.Parameter(self.state_dict['classifier.0.dense.weight'], requires_grad=True)
-        self.classifier[0].dense.bias = nn.Parameter(self.state_dict['classifier.0.dense.bias'], requires_grad=True)
-        self.classifier[0].LayerNorm.weight = nn.Parameter(self.state_dict['classifier.0.LayerNorm.weight'], requires_grad=True)
-        self.classifier[0].LayerNorm.bias = nn.Parameter(self.state_dict['classifier.0.LayerNorm.bias'], requires_grad=True)
-        self.classifier[1].weight = nn.Parameter(self.state_dict['classifier.1.weight'], requires_grad=True)
-        self.classifier[1].bias = nn.Parameter(self.state_dict['classifier.1.bias'], requires_grad=True)
+        
+        if self.pretrained_params_file is not None:
+            # Initialize classifier with finetuned weights from pretrained_params_file
+            self.classifier[0].dense.weight = nn.Parameter(self.state_dict['classifier.0.dense.weight'], requires_grad=True)
+            self.classifier[0].dense.bias = nn.Parameter(self.state_dict['classifier.0.dense.bias'], requires_grad=True)
+            self.classifier[0].LayerNorm.weight = nn.Parameter(self.state_dict['classifier.0.LayerNorm.weight'], requires_grad=True)
+            self.classifier[0].LayerNorm.bias = nn.Parameter(self.state_dict['classifier.0.LayerNorm.bias'], requires_grad=True)
+            self.classifier[1].weight = nn.Parameter(self.state_dict['classifier.1.weight'], requires_grad=True)
+            self.classifier[1].bias = nn.Parameter(self.state_dict['classifier.1.bias'], requires_grad=True)
+        
+        else:
+            # Initialize classifier from BertPreTrainedModel class initialization
+            assert(self.bert_model_name is not None)
+            self.classifier.apply(self.bert._init_weights)
 
     def forward(
         self,
@@ -163,12 +176,16 @@ class PrepareVisualBertModel(nn.Module):
 
         self.bert_model_name = 'bert-base-uncased'
 
-        # self.fc7_w_file = os.path.join(args.params_path, 'fasterrcnn_fc7/fc7_w.pkl')
-        # self.fc7_b_file = os.path.join(args.params_path, 'fasterrcnn_fc7/fc7_b.pkl')
-        self.pretrained_params_file = os.path.join(args.params_path, 'visual_bert_finetuned/model.pth')
+        self.use_pretrained_params = bool(args.use_pretrained_params)
+        self.pretrained_params_file = None
+        if self.use_pretrained_params:
+            # self.fc7_w_file = os.path.join(args.params_path, 'fasterrcnn_fc7/fc7_w.pkl')
+            # self.fc7_b_file = os.path.join(args.params_path, 'fasterrcnn_fc7/fc7_b.pkl')
+            self.pretrained_params_file = os.path.join(args.pretrained_params_path, 'visual_bert_finetuned/model.pth')
 
         self.visual_embedding_dim = 2048
         self.num_labels = 2
+        self.num_hidden_layers = 2
 
         # self.faster_rcnn_fc7 = FineTuneFasterRcnnFc7(weights_file=self.fc7_w_file, bias_file=self.fc7_b_file)
     
@@ -176,8 +193,12 @@ class PrepareVisualBertModel(nn.Module):
             bert_model_name=self.bert_model_name,
             pretrained_params_file=self.pretrained_params_file,
             visual_embedding_dim=self.visual_embedding_dim,
-            num_labels=self.num_labels
+            num_labels=self.num_labels,
+            num_hidden_layers=self.num_hidden_layers
         )
+
+        # Special initialize for visual embeddings
+        self.model.bert.embeddings.special_initialize()
 
     def forward(self, samples_batch):
         """ Make sure that every textual input has shape (batch_size, max_seq_length)

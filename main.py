@@ -10,10 +10,11 @@ from eval import evaluate_visual_bert
 def parse_args():
     parser = argparse.ArgumentParser()
     # Model
-    parser.add_argument('--model', type=str, default="ModelResnet")
+    parser.add_argument('--model', type=str, default="PrepareVisualBertModel")
     parser.add_argument('--dataset', type=str, default="HMVisualBertDataset")
     parser.add_argument('--data_path', type=str, default="data/VisualBert")
-    parser.add_argument('--params_path', type=str, default="pretrained_params")
+    parser.add_argument('--use_pretrained_params', type=int, default=0)
+    parser.add_argument('--pretrained_params_path', type=str, default="pretrained_params")
 
     # Training
     parser.add_argument('--output', type=str, default='ckpt/')
@@ -43,21 +44,22 @@ if __name__ == '__main__':
     # DataLoader
     train_ds = eval(args.dataset)(name="train", args=args)
     dev_ds = eval(args.dataset)(name="dev", args=args)
-    train_loader = DataLoader(train_ds, args.batch_size, shuffle=True, num_workers=2)
-    eval_loader = DataLoader(dev_ds, args.batch_size, num_workers=2)
+    train_loader = DataLoader(train_ds, args.batch_size, shuffle=True, num_workers=4)
+    eval_loader = DataLoader(dev_ds, args.batch_size, num_workers=4)
 
     # Test
-    outputs = evaluate_visual_bert(eval_loader=eval_loader, args=args)
-    print(outputs[5])
+    # outputs = evaluate_visual_bert(eval_loader=eval_loader, args=args)
+    # print(outputs[5])
 
-    # # Net
-    # net = eval(args.model)(args).cuda()
-    # print("Total number of parameters : " + str(sum([p.numel() for p in net.parameters()]) / 1e6) + "M")
-    # net = net.cuda()
+    net = eval(args.model)(args=args)
+    net.build()
+    net.init_losses()
+    net.model.cuda()
+    print("Total number of parameters : " + str(sum([p.numel() for p in net.parameters()]) / 1e6) + "M")
 
-    # # Create Checkpoint dir
-    # if not os.path.exists(os.path.join(args.output, args.name)):
-    #     os.makedirs(os.path.join(args.output, args.name))
+    # Create Checkpoint dir
+    if not os.path.exists(os.path.join(args.output, args.name)):
+        os.makedirs(os.path.join(args.output, args.name))
 
     # # Run training
-    # eval_accuracies = train(net, train_loader, eval_loader, args)
+    eval_accuracies, eval_auroc = train(net, train_loader, eval_loader, args)

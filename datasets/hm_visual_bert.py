@@ -49,9 +49,9 @@ class HMVisualBertDataset(Dataset):
         sample['input_mask'] = torch.tensor(self.df['text_encoding'][idx]['input_mask'].astype(np.int64), dtype=torch.long)
 
         if self.name == 'test':
-            sample['label'] = torch.tensor(np.array([]), dtype=torch.float)
+            sample['label'] = torch.tensor(np.array([]), dtype=torch.long)
         else:
-            sample['label'] = torch.tensor(self.df['label'][idx], dtype=torch.float)
+            sample['label'] = torch.tensor(self.df['label'][idx], dtype=torch.long)
 
         return sample
 

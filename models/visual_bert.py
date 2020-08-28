@@ -45,7 +45,7 @@ class VisualBertModel(BertPreTrainedModel):
     ):  
 
         # Add image mask to input mask to get attention mask for the whole input (CHECK)
-        img_mask = torch.ones(img_features.shape[:-1]).long()
+        img_mask = torch.ones(img_features.shape[:-1]).long().cuda()
 
         attention_mask = torch.cat((input_mask, img_mask), dim=1)
 
@@ -206,8 +206,6 @@ class PrepareVisualBertModel(nn.Module):
             and every visual inputs has shape (batch_size, img_features_number, img_features_dim). """
 
         # samples_batch["img_features"] = self.faster_rcnn_fc7(samples_batch["img_features"])
-        for key in samples_batch.keys():
-            print(key, samples_batch[key].device)
 
         output_dic = self.model(
             input_ids=samples_batch["input_ids"],

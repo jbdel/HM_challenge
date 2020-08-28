@@ -39,7 +39,7 @@ def train(net, train_loader, eval_loader, args):
             loss_tmp = 0
             optim.zero_grad()
             for key, value in samples_batch.items():
-                samples_batch[key] = value.cuda()
+                samples_batch[key] = value.to('cuda')
             out = net(samples_batch)
             loss = loss_fn(
                 out["scores"],
@@ -129,7 +129,7 @@ def evaluate(net, eval_loader, args):
         for step, samples_batch in enumerate(eval_loader):
 
             for key, value in samples_batch.items():
-                samples_batch[key] = value.cuda()
+                samples_batch[key] = value.to('cuda')
             out = net(samples_batch)
 
             output = out["scores"]

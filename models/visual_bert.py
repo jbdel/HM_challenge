@@ -207,7 +207,7 @@ class PrepareVisualBertModel(nn.Module):
 
         # samples_batch["img_features"] = self.faster_rcnn_fc7(samples_batch["img_features"])
         for key in samples_batch.keys():
-            print(samples_batch[key].device)
+            print(key, samples_batch[key].device)
 
         output_dic = self.model(
             input_ids=samples_batch["input_ids"],

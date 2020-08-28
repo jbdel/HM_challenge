@@ -5,7 +5,6 @@ from models import *
 from datasets import *
 from train import train
 import numpy as np
-from eval import evaluate_visual_bert
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -52,10 +51,8 @@ if __name__ == '__main__':
     # print(outputs[5])
 
     net = eval(args.model)(args=args)
-    net.build()
-    net.init_losses()
-    net.model.cuda()
     print("Total number of parameters : " + str(sum([p.numel() for p in net.parameters()]) / 1e6) + "M")
+    net.model.cuda()
 
     # Create Checkpoint dir
     if not os.path.exists(os.path.join(args.output, args.name)):

@@ -18,9 +18,10 @@ def parse_args():
     # Training
     parser.add_argument('--output', type=str, default='ckpt/')
     parser.add_argument('--name', type=str, default='exp0/')
-    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--max_epoch', type=int, default=99)
-    parser.add_argument('--lr_base', type=float, default=0.001)
+    parser.add_argument('--lr_base', type=float, default=5e-05)
+    parser.add_argument('--eps', type=float, default=1e-08)
     parser.add_argument('--grad_norm_clip', type=float, default=-1)
     parser.add_argument('--eval_start', type=int, default=0)
     parser.add_argument('--early_stop', type=int, default=3)

@@ -113,6 +113,7 @@ class FineTuneVisualBertModel(nn.Module):
                         state_dict=self.state_dict
                     )
         else:
+            print('ok')
             # Initialize VisualBertModel from pretrained bert_model_name
             self.bert_config = BertConfig.from_pretrained(self.bert_model_name, 
                                                           num_labels=self.num_labels,

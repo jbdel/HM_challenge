@@ -1,9 +1,9 @@
 import torch.nn as nn
 from torchvision import models
 
-class Model_Resnet(nn.Module):
+class ModelResnet(nn.Module):
     def __init__(self, args):
-        super(Model_Resnet, self).__init__()
+        super(ModelResnet, self).__init__()
 
         self.net = models.resnet152(pretrained=True)
         for param in self.parameters():

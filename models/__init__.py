@@ -1,1 +1,2 @@
-from .resnet import Model_Resnet
+from .resnet import ModelResnet
+from .visual_bert import VisualBertModel, FineTuneVisualBertModel, PrepareVisualBertModel

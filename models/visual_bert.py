@@ -206,6 +206,8 @@ class PrepareVisualBertModel(nn.Module):
             and every visual inputs has shape (batch_size, img_features_number, img_features_dim). """
 
         # samples_batch["img_features"] = self.faster_rcnn_fc7(samples_batch["img_features"])
+        for key in samples_batch.keys():
+            assert samples_batch[key].device == 'cuda'
 
         output_dic = self.model(
             input_ids=samples_batch["input_ids"],

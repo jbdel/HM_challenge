@@ -21,6 +21,11 @@ def get_linear_schedule_with_warmup(optimizer, num_warmup_steps, num_training_st
 def train(net, train_loader, eval_loader, args):
     loss_sum = 0
     best_eval_accuracy = 0.0
+    best_auroc = 0.0
+    best_net = {
+        'state_dict': net.state_dict(),
+        'args': args,
+    }
     early_stop = 0
 
     # Load the optimizer parameters
@@ -101,6 +106,11 @@ def train(net, train_loader, eval_loader, args):
                     '/best' + str(args.seed) + '.pkl'
                 )
                 best_eval_accuracy = accuracy
+                best_auroc = auroc
+                best_net = {
+                    'state_dict': net.state_dict(),
+                    'args': args,
+                }
                 early_stop = 0
 
             else:
@@ -113,9 +123,11 @@ def train(net, train_loader, eval_loader, args):
                               '/best' + str(args.seed) + '.pkl',
                               args.output + "/" + args.name +
                               '/best' + str(best_eval_accuracy) + "_" + str(args.seed) + '.pkl')
-                    return eval_accuracies, eval_auroc
+                    return eval_accuracies, eval_auroc, best_net
 
         loss_sum = 0
+
+    return eval_accuracies, eval_auroc, best_net
 
 
 def evaluate(net, eval_loader, args):

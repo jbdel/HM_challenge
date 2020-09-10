@@ -60,4 +60,4 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(args.output, args.name))
 
     # # Run training
-    eval_accuracies, eval_auroc = train(net, train_loader, eval_loader, args)
+    eval_accuracies, eval_auroc, best_net = train(net, train_loader, eval_loader, args)

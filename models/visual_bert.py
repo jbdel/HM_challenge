@@ -113,7 +113,6 @@ class FineTuneVisualBertModel(nn.Module):
                         state_dict=self.state_dict
                     )
         else:
-            print('ok')
             # Initialize VisualBertModel from pretrained bert_model_name
             self.bert_config = BertConfig.from_pretrained(self.bert_model_name, 
                                                           num_labels=self.num_labels,
@@ -163,7 +162,7 @@ class FineTuneVisualBertModel(nn.Module):
 
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
-        reshaped_logits = logits.contiguous().view(-1, self.num_labels)
+        reshaped_logits = logits.contiguous().view(-1, self.num_labels).squeeze()
 
         output_dic["scores"] = reshaped_logits
 
@@ -185,7 +184,7 @@ class PrepareVisualBertModel(nn.Module):
             self.pretrained_params_file = os.path.join(args.pretrained_params_path, 'visual_bert_finetuned/model.pth')
 
         self.visual_embedding_dim = 2048
-        self.num_labels = 2
+        self.num_labels = 1
         self.num_hidden_layers = 2
 
         # self.faster_rcnn_fc7 = FineTuneFasterRcnnFc7(weights_file=self.fc7_w_file, bias_file=self.fc7_b_file)

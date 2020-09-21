@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 import time
 import itertools
 import os
@@ -33,13 +32,13 @@ def train(net, train_loader, eval_loader, weights, args):
     # Use batch_sampler associated with train_loader to keep track of indices
     train_batch_sampler = train_loader.batch_sampler
 
-    eval_accuracies = []
-    eval_auroc = []
+    # eval_accuracies = []
+    # eval_auroc = []
 
     for epoch in range(0, args.max_epoch):
 
         time_start = time.time()
-        loss_sum = 0
+        net_loss_sum = 0
         net_train_error = 0
 
         for step, (samples_batch, indices_batch) in enumerate(zip(train_loader, train_batch_sampler)):
@@ -95,7 +94,7 @@ def train(net, train_loader, eval_loader, weights, args):
             loss_tmp += loss.cpu().data.numpy()
             train_error_tmp += train_error.cpu().data.numpy()
 
-            loss_sum += loss.cpu().data.numpy()
+            net_loss_sum += loss.cpu().data.numpy()
             net_train_error += train_error.cpu().data.numpy()
 
             print("\r[Epoch %2d][Step %4d/%4d] Loss: %.4f, Error: %.4f, Lr: %.2e, %4d m "
@@ -112,7 +111,7 @@ def train(net, train_loader, eval_loader, weights, args):
 
             # Gradient norm clipping
             if args.grad_norm_clip > 0:
-                nn.utils.clip_grad_norm_(
+                torch.nn.utils.clip_grad_norm_(
                     net.parameters(),
                     args.grad_norm_clip
                 )
@@ -124,7 +123,7 @@ def train(net, train_loader, eval_loader, weights, args):
         time_end = time.time()
         elapse_time = time_end - time_start
         print('Finished in {}s'.format(int(elapse_time)))
-        print('Weighted train loss: ', loss_sum)
+        print('Weighted train loss: ', net_loss_sum)
         print('Weighted train misclassification error: ', net_train_error)
         # epoch_finish = epoch + 1
 
@@ -174,7 +173,7 @@ def train(net, train_loader, eval_loader, weights, args):
 
         net_state = net.state_dict()
 
-    return net_state, loss_sum, net_train_error 
+    return net_state, net_loss_sum, net_train_error 
 
 
 def evaluate(net, eval_loader, args):

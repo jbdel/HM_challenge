@@ -90,8 +90,9 @@ def get_eval_targets(eval_loader, n_eval_samples):
     start = 0
 
     for samples_batch in eval_loader:
-        batch_size = len(samples_batch)
-        eval_targets[start:start + batch_size] = samples_batch["label"].long()
+        targets_batch = samples_batch["label"].squeeze().long()
+        batch_size = len(targets_batch)
+        eval_targets[start:start + batch_size] = targets_batch
         start = start + batch_size
         
     return eval_targets

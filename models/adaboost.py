@@ -31,7 +31,7 @@ def adaboost(base_estimator, n_estimators, train_loader, eval_loader, args):
     for step in range(n_estimators):
 
         # Check that weights are positive and sum to one
-        assert torch.isclose(torch.sum(samples_weights), torch.zeros(1, dtype=torch.float64))
+        assert torch.isclose(torch.sum(samples_weights), torch.ones(1, dtype=torch.float64))
         assert torch.min(samples_weights) >= 0
 
         # Deepcopy base_estimator

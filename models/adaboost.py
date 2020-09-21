@@ -220,6 +220,7 @@ def estimator_eval(estimator, eval_loader, n_eval_samples):
 
     with torch.no_grad():
         estimator.eval()
+        start = 0
     
         for step, samples_batch in enumerate(eval_loader):
 
@@ -234,7 +235,8 @@ def estimator_eval(estimator, eval_loader, n_eval_samples):
             predictions = (predictions * 2) - 1
 
             batch_size = len(predictions)
-            estimator_pred[step * batch_size:step * batch_size + batch_size] = predictions
+            estimator_pred[start:start + batch_size] = predictions
+            start = start + batch_size
         
         return estimator_pred
 

@@ -114,6 +114,7 @@ def ada_train(net, train_loader, samples_weights, args):
     optim = torch.optim.AdamW(net.parameters(), lr=args.lr_base, eps=args.eps)
     scheduler = get_linear_schedule_with_warmup(optim, 2000, 22000)
     loss_fn = torch.nn.BCEWithLogitsLoss(reduction='none')
+    sigmoid = torch.nn.Sigmoid()
 
     # Use batch_sampler associated with train_loader to keep track of indices
     train_batch_sampler = train_loader.batch_sampler
@@ -157,7 +158,7 @@ def ada_train(net, train_loader, samples_weights, args):
             assert weights_batch.shape == torch.Size([batch_size])
 
             # Evaluate predictions from logits (threshold: 0.5) then the weighted misclassification error
-            predictions = (torch.nn.Sigmoid(logits) > 0.5).long()
+            predictions = (sigmoid(logits) > 0.5).long()
             assert predictions.shape == torch.Size([batch_size])
             assert predictions.dtype == torch.long
             incorrect = (predictions != targets).double()
@@ -218,6 +219,7 @@ def ada_train(net, train_loader, samples_weights, args):
 def estimator_eval(estimator, eval_loader, n_eval_samples):
 
     estimator_pred = torch.zeros(n_eval_samples, dtype=torch.long)
+    sigmoid = torch.nn.Sigmoid()
 
     with torch.no_grad():
         estimator.eval()
@@ -230,7 +232,7 @@ def estimator_eval(estimator, eval_loader, n_eval_samples):
 
             output_dic = estimator(samples_batch)
             logits = output_dic["scores"]
-            predictions = (torch.nn.Sigmoid(logits) > 0.5).long()
+            predictions = (sigmoid(logits) > 0.5).long()
 
             # Outputs -1 or +1 depending on the prediction 0 or 1
             predictions = (predictions * 2) - 1

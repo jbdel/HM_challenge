@@ -144,7 +144,7 @@ def ada_train(net, train_loader, samples_weights, args, n_epochs_step):
     # Use batch_sampler associated with train_loader to keep track of indices
     train_batch_sampler = train_loader.batch_sampler
 
-    for epoch in range(args.max_epoch + n_epochs_step):
+    for epoch in range(args.max_epoch + 2 * n_epochs_step):
 
         time_start = time.time()
         net_loss_sum = 0

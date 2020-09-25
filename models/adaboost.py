@@ -19,11 +19,11 @@ def adaboost(base_estimator, n_estimators, train_loader, eval_loader, args):
     assert eval_targets.dtype == torch.long 
     print(eval_targets)
 
-    samples_weights = torch.ones(n_train_samples, dtype=torch.float64) / n_train_samples
+    samples_weights = torch.ones(n_train_samples, dtype=torch.float32) / n_train_samples
 
     estimators = []
-    estimator_weights = torch.zeros(n_estimators, dtype=torch.float64)
-    estimator_errors = torch.ones(n_estimators, dtype=torch.float64)
+    estimator_weights = torch.zeros(n_estimators, dtype=torch.float32)
+    estimator_errors = torch.ones(n_estimators, dtype=torch.float32)
     estimator_preds = []
 
     ensemble_accuracies = []
@@ -31,7 +31,7 @@ def adaboost(base_estimator, n_estimators, train_loader, eval_loader, args):
     for step in range(n_estimators):
 
         # Check that weights are positive and sum to one
-        assert torch.isclose(torch.sum(samples_weights), torch.ones(1, dtype=torch.float64))
+        assert torch.isclose(torch.sum(samples_weights), torch.ones(1, dtype=torch.float32))
         assert torch.min(samples_weights) >= 0
 
         # Deepcopy base_estimator
@@ -47,7 +47,7 @@ def adaboost(base_estimator, n_estimators, train_loader, eval_loader, args):
 
         # Check estimator_incorrect shape and type
         assert estimator_incorrect.shape == torch.Size([n_train_samples])
-        assert estimator_incorrect.dtype == torch.float64
+        assert estimator_incorrect.dtype == torch.float32
 
         # Stop if classification is perfect
         if estimator_train_error == 0:
@@ -124,18 +124,18 @@ def ada_train(net, train_loader, samples_weights, args):
         time_start = time.time()
         net_loss_sum = 0
         net_train_error = 0
-        net_incorrect = torch.ones(samples_weights.shape, dtype=torch.float64)
+        net_incorrect = torch.ones(samples_weights.shape, dtype=torch.float32)
 
         for step, (samples_batch, indices_batch) in enumerate(zip(train_loader, train_batch_sampler)):
 
             loss_tmp = 0
             train_error_tmp = 0
             batch_size = len(indices_batch)
-            targets = samples_batch["label"].long()
+            targets = samples_batch["label"].float()
 
             # Checking shape and dtype
             assert targets.shape == torch.Size([batch_size])
-            assert targets.dtype == torch.long
+            assert targets.dtype == torch.float
 
             # Set gradients to zero before forward pass
             optim.zero_grad()
@@ -151,6 +151,7 @@ def ada_train(net, train_loader, samples_weights, args):
 
             # Checking shape
             assert logits.shape == torch.Size([batch_size])
+            print('logits.dtype: ', logits.dtype)
 
             # Pick corresponding weights for batch samples - shape: (batch_size)
             weights_batch = samples_weights[indices_batch]
@@ -160,10 +161,10 @@ def ada_train(net, train_loader, samples_weights, args):
             assert weights_batch.shape == torch.Size([batch_size])
 
             # Evaluate predictions from logits (threshold: 0.5) then the weighted misclassification error
-            predictions = (sigmoid(logits) > 0.5).long()
+            predictions = (sigmoid(logits) > 0.5).float()
             assert predictions.shape == torch.Size([batch_size])
-            assert predictions.dtype == torch.long
-            incorrect = (predictions != targets).double()
+            assert predictions.dtype == torch.float
+            incorrect = (predictions != targets).float()
             train_error = torch.dot(weights_batch, incorrect)
 
             # Evaluate loss value for each sample in the batch - shape: (batch_size)
@@ -171,6 +172,7 @@ def ada_train(net, train_loader, samples_weights, args):
 
             # Checking shape
             assert loss.shape == torch.Size([batch_size])
+            print('loss.dtype: ', loss.dtype)
 
             # Weight the loss values then evaluate the mean
             loss = torch.mean(torch.mul(weights_batch, loss))

@@ -133,7 +133,7 @@ def get_linear_schedule_with_warmup(optimizer, num_warmup_steps, num_training_st
 
     return LambdaLR(optimizer, lr_lambda, last_epoch)
 
-def ada_train(net, train_loader, samples_weights, args, step):
+def ada_train(net, train_loader, samples_weights, args, n_epochs_step):
 
     # Load optimizer, scheduler and loss function
     optim = torch.optim.AdamW(net.parameters(), lr=args.lr_base, eps=args.eps)
@@ -144,7 +144,7 @@ def ada_train(net, train_loader, samples_weights, args, step):
     # Use batch_sampler associated with train_loader to keep track of indices
     train_batch_sampler = train_loader.batch_sampler
 
-    for epoch in range(args.max_epoch + step):
+    for epoch in range(args.max_epoch + n_epochs_step):
 
         time_start = time.time()
         net_loss_sum = 0

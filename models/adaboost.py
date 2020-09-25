@@ -17,15 +17,14 @@ def adaboost(base_estimator, n_estimators, train_loader, eval_loader, args):
 
     assert eval_targets.shape == torch.Size([n_eval_samples])
     assert eval_targets.dtype == torch.long 
-    print(eval_targets)
+    print('eval_targets: ', eval_targets)
 
     samples_weights = torch.ones(n_train_samples, dtype=torch.float32) / n_train_samples
 
     estimators = []
-    estimator_weights = torch.zeros(n_estimators, dtype=torch.float32)
-    estimator_errors = torch.ones(n_estimators, dtype=torch.float32)
-    estimator_preds = []
-
+    estimators_weights = []
+    estimators_errors = []
+    estimators_preds = []
     ensemble_accuracies = []
 
     for step in range(n_estimators):
@@ -33,6 +32,7 @@ def adaboost(base_estimator, n_estimators, train_loader, eval_loader, args):
         # Check that weights are positive and sum to one
         assert torch.isclose(torch.sum(samples_weights), torch.ones(1, dtype=torch.float32))
         assert torch.min(samples_weights) >= 0
+        print('samples_weights: ', samples_weights)
 
         # Deepcopy base_estimator
         estimator = copy.deepcopy(base_estimator)
@@ -45,9 +45,14 @@ def adaboost(base_estimator, n_estimators, train_loader, eval_loader, args):
                                                     args
                                                 )
 
-        # Check estimator_incorrect shape and type
+        # Check estimator_incorrect shape and dtype
         assert estimator_incorrect.shape == torch.Size([n_train_samples])
-        assert estimator_incorrect.dtype == torch.float32
+        assert estimator_incorrect.dtype == torch.float
+
+        # Check estimator_train_error shape and dtype
+        assert estimator_train_error.shape == torch.Size([1])
+        assert estimator_train_error.dtype == torch.float
+        print('estimator_train_error: ', estimator_train_error)
 
         # Stop if classification is perfect
         if estimator_train_error == 0:
@@ -62,27 +67,46 @@ def adaboost(base_estimator, n_estimators, train_loader, eval_loader, args):
 
         # Keep estimator state and train error at this step in memory
         estimators.append(estimator_state)
-        estimator_errors[step] = estimator_train_error
+        estimators_errors.append(estimator_train_error)
 
         # Evaluate estimator weight and keep it in memory
-        estimator_weight = np.log((1. - estimator_train_error) / estimator_train_error)
-        estimator_weights[step] = estimator_weight
+        estimator_weight = torch.log((1. - estimator_train_error) / estimator_train_error)
+        estimators_weights.append(estimator_weight)
+
+        # Check estimator_train_error shape and dtype
+        assert estimator_weight.shape == torch.Size([1])
+        assert estimator_weight.dtype == torch.float
+        print('estimator_weight: ', estimator_weight)
 
         # Update sample weights according to estimator_weight and estimator_incorrect if not last step
         if not step == n_estimators - 1:
-            samples_weights *= np.exp(estimator_weight * estimator_incorrect)
+            samples_weights *= torch.exp(estimator_weight * estimator_incorrect)
             samples_weights /= torch.sum(samples_weights)
         
-        # Evaluate the predictions of the current estimator on the eval_loader
-        estimator_pred = estimator_eval(estimator, eval_loader, n_eval_samples)
-        estimator_preds.append(estimator_pred)
+        # Evaluate predictions and accuracy of current estimator on eval_loader
+        # To improve: no need to pass eval_targets to estimator_eval
+        estimator_pred, estimator_accuracy = estimator_eval(estimator, eval_loader, eval_targets)
+        estimators_preds.append(estimator_pred)
 
-        # Evaluate accuracy (and auroc) for ensemble learning at this point
-        ensemble_accuracy = ensemble_eval(estimator_preds, estimator_weights, eval_targets)
-        print(ensemble_accuracy)
+        # Check estimator_pred shape and dtype
+        assert estimator_pred.shape == torch.Size([n_eval_samples])
+        assert estimator_pred.dtype == torch.long
+        print('estimator_pred: ', estimator_pred)
+        print('estimator_accuracy: ', estimator_accuracy)
+
+        # Evaluate predictions and accuracy (and auroc) for ensemble learning at this point
+        ensemble_pred, ensemble_accuracy = ensemble_eval(estimators_preds, estimators_weights, eval_targets)
         ensemble_accuracies.append(ensemble_accuracy)
 
-    return estimators, estimator_weights, estimator_errors, ensemble_accs
+        # Check ensemble_pred shape and dtype
+        assert ensemble_pred.shape == torch.Size([n_eval_samples])
+        assert ensemble_pred.dtype == torch.long
+        print('ensemble_pred: ', ensemble_pred)
+        print('eval_targets: ', eval_targets)
+        print('ensemble_accuracy: ', ensemble_accuracy)
+
+
+    return estimators, estimators_weights, estimators_errors, ensemble_accuracies
 
 def get_eval_targets(eval_loader, n_eval_samples):
 
@@ -186,11 +210,11 @@ def ada_train(net, train_loader, samples_weights, args):
             loss_tmp += loss.cpu().data.numpy()
             train_error_tmp += train_error.cpu().data.numpy()
 
-            net_loss_sum += loss.cpu().data.numpy()
-            net_train_error += train_error.cpu().data.numpy()
+            net_loss_sum += loss.cpu().data
+            net_train_error += train_error.cpu().data
             net_incorrect[indices_batch] = incorrect.cpu().data
 
-            print("\r[Epoch %2d][Step %4d/%4d] Loss: %.4f, Error: %.4f, Lr: %.2e, %4d m "
+            print("\r[Epoch %2d][Step %4d/%4d] Loss: %.6f, Error: %.4f, Lr: %.2e, %4d m "
                   "remaining" % (
                       epoch + 1,
                       step,
@@ -223,9 +247,9 @@ def ada_train(net, train_loader, samples_weights, args):
 
     return net_state, net_loss_sum, net_train_error, net_incorrect
 
-def estimator_eval(estimator, eval_loader, n_eval_samples):
+def estimator_eval(estimator, eval_loader, eval_targets):
 
-    estimator_pred = torch.zeros(n_eval_samples, dtype=torch.long)
+    estimator_pred = torch.zeros(len(eval_targets), dtype=torch.long)
     sigmoid = torch.nn.Sigmoid()
 
     with torch.no_grad():
@@ -246,26 +270,30 @@ def estimator_eval(estimator, eval_loader, n_eval_samples):
 
             batch_size = len(predictions)
             estimator_pred[start:start + batch_size] = predictions
-            start = start + batch_size
+            start += batch_size
+
+        # Accuracy
+        estimator_pred_rescaled = ((estimator_pred + 1) * 0.5).long()
+        estimator_accuracy = torch.mean((estimator_pred_scaled == eval_targets).float())
         
-        return estimator_pred
+        return estimator_pred, estimator_accuracy
 
 
-def ensemble_eval(estimator_preds, estimator_weights, eval_targets):
+def ensemble_eval(estimators_preds, estimators_weights, eval_targets):
 
-    ensemble_pred = torch.zeros(len(eval_targets), dtype=torch.double)
+    ensemble_pred = torch.zeros(len(eval_targets), dtype=torch.float32)
 
-    assert len(estimator_preds) == len(estimator_weights)
+    assert len(estimators_preds) == len(estimators_weights)
 
-    for n, estimator_pred in enumerate(estimator_preds):
-        ensemble_pred += estimator_weights[n] * estimator_pred
+    for n, estimator_pred in enumerate(estimators_preds):
+        ensemble_pred += estimators_weights[n] * estimator_pred
     
     # Obtain predictions with targets 0 and 1
     ensemble_pred = ((torch.sign(ensemble_pred) + 1.) * 0.5).long()
 
     # Accuracy
-    ensemble_accuracy = torch.mean((ensemble_pred == eval_targets).double())
+    ensemble_accuracy = torch.mean((ensemble_pred == eval_targets).float())
 
     # AUROC: TO DO
 
-    return ensemble_accuracy
+    return ensemble_pred, ensemble_accuracy

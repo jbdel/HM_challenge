@@ -50,7 +50,7 @@ def adaboost(base_estimator, n_estimators, train_loader, eval_loader, args):
         assert estimator_incorrect.dtype == torch.float
 
         # Check estimator_train_error shape and dtype
-        assert estimator_train_error.shape == torch.Size([1])
+        assert estimator_train_error.shape == torch.Size([])
         assert estimator_train_error.dtype == torch.float
         print('estimator_train_error: ', estimator_train_error)
 
@@ -74,7 +74,7 @@ def adaboost(base_estimator, n_estimators, train_loader, eval_loader, args):
         estimators_weights.append(estimator_weight)
 
         # Check estimator_train_error shape and dtype
-        assert estimator_weight.shape == torch.Size([1])
+        assert estimator_weight.shape == torch.Size([])
         assert estimator_weight.dtype == torch.float
         print('estimator_weight: ', estimator_weight)
 

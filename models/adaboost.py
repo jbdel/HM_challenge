@@ -90,10 +90,10 @@ def get_eval_targets(eval_loader, n_eval_samples):
     start = 0
 
     for samples_batch in eval_loader:
-        targets_batch = samples_batch["label"].squeeze().long()
+        targets_batch = samples_batch["label"].squeeze()
         batch_size = len(targets_batch)
         eval_targets[start:start + batch_size] = targets_batch
-        start = start + batch_size
+        start += batch_size
         
     return eval_targets
 
@@ -131,7 +131,9 @@ def ada_train(net, train_loader, samples_weights, args):
             loss_tmp = 0
             train_error_tmp = 0
             batch_size = len(indices_batch)
-            targets = samples_batch["label"].float()
+
+            # Target labels - shape: (batch_size), dtype: torch.float32
+            targets = samples_batch["label"].squeeze().float()
 
             # Checking shape and dtype
             assert targets.shape == torch.Size([batch_size])
@@ -145,22 +147,23 @@ def ada_train(net, train_loader, samples_weights, args):
                 samples_batch[key] = value.to('cuda')
             targets = targets.to('cuda')
 
-            # Evaluate logits predictions - shape: (batch_size)
+            # Evaluate logits predictions - shape: (batch_size), dtype: torch.float32
             output_dic = net(samples_batch)
             logits = output_dic["scores"]
 
-            # Checking shape
+            # Checking shape and dtype
             assert logits.shape == torch.Size([batch_size])
-            print('logits.dtype: ', logits.dtype)
+            assert logits.dtype == torch.float
 
-            # Pick corresponding weights for batch samples - shape: (batch_size)
+            # Pick corresponding weights for batch samples - shape: (batch_size), dtype: torch.float32
             weights_batch = samples_weights[indices_batch]
             weights_batch = weights_batch.to('cuda')
 
-            # Checking shape
+            # Checking shape and dtype
             assert weights_batch.shape == torch.Size([batch_size])
+            assert weights_batch.dtype == torch.float
 
-            # Evaluate predictions from logits (threshold: 0.5) then the weighted misclassification error
+            # Evaluate predictions from logits (threshold: 0.5) and the weighted misclassification error
             predictions = (sigmoid(logits) > 0.5).float()
             assert predictions.shape == torch.Size([batch_size])
             assert predictions.dtype == torch.float
@@ -170,9 +173,9 @@ def ada_train(net, train_loader, samples_weights, args):
             # Evaluate loss value for each sample in the batch - shape: (batch_size)
             loss = loss_fn(logits, targets)
 
-            # Checking shape
+            # Checking shape and dtype
             assert loss.shape == torch.Size([batch_size])
-            print('loss.dtype: ', loss.dtype)
+            assert loss.dtype == torch.float
 
             # Weight the loss values then evaluate the mean
             loss = torch.mean(torch.mul(weights_batch, loss))
@@ -185,7 +188,7 @@ def ada_train(net, train_loader, samples_weights, args):
 
             net_loss_sum += loss.cpu().data.numpy()
             net_train_error += train_error.cpu().data.numpy()
-            net_incorrect[indices_batch] = incorrect.cpu().data.numpy()
+            net_incorrect[indices_batch] = incorrect.cpu().data
 
             print("\r[Epoch %2d][Step %4d/%4d] Loss: %.4f, Error: %.4f, Lr: %.2e, %4d m "
                   "remaining" % (

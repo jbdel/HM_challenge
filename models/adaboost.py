@@ -143,6 +143,7 @@ def ada_train(net, train_loader, samples_weights, args):
             # Send inputs to CUDA
             for key, value in samples_batch.items():
                 samples_batch[key] = value.to('cuda')
+            targets = targets.to('cuda')
 
             # Evaluate logits predictions - shape: (batch_size)
             output_dic = net(samples_batch)
@@ -153,6 +154,7 @@ def ada_train(net, train_loader, samples_weights, args):
 
             # Pick corresponding weights for batch samples - shape: (batch_size)
             weights_batch = samples_weights[indices_batch]
+            weights_batch = weights_batch.to('cuda')
 
             # Checking shape
             assert weights_batch.shape == torch.Size([batch_size])

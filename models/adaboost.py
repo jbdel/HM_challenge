@@ -274,7 +274,7 @@ def estimator_eval(estimator, eval_loader, eval_targets):
 
         # Accuracy
         estimator_pred_rescaled = ((estimator_pred + 1) * 0.5).long()
-        estimator_accuracy = torch.mean((estimator_pred_scaled == eval_targets).float())
+        estimator_accuracy = torch.mean((estimator_pred_rescaled == eval_targets).float())
         
         return estimator_pred, estimator_accuracy
 
